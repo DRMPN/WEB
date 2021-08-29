@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+        <link href="styles.css" rel="stylesheet">
+        <title>Trivia!</title>
+
+        <script>
+
+            function checkAnswerMQ1()
+            {
+                let paragraph = document.querySelector('#p1');
+                let answer = this.innerHTML;
+
+                if (answer == "Pomodoro")
+                {
+                    this.style.backgroundColor = "green";
+
+                    paragraph.innerHTML = "Correct!";
+                    paragraph.style.color = "green";
+                }
+                else
+                {
+                    this.style.backgroundColor="red";
+
+                    paragraph.innerHTML = "Incorrect"
+                    paragraph.style.color = "red";
+                }
+
+                paragraph.style.visibility = "visible";
+            }
+
+            function checkAnswerFR1()
+            {
+                let paragraph = document.querySelector('#p2');
+                let answer = document.querySelector('#input').value
+
+                if (answer == "Karl Marx")
+                {
+                    paragraph.innerHTML = "Correct!";
+                    paragraph.style.color = "green";
+                }
+                else
+                {
+                    paragraph.innerHTML = "Incorrect"
+                    paragraph.style.color = "red";
+                }
+
+                paragraph.style.visibility = "visible";
+            }
+
+            function listen()
+            {
+                let list_of_mq1 = document.querySelectorAll('#mq1');
+
+                for (let i = 0; i < list_of_mq1.length; i++)
+                {
+                    list_of_mq1.item(i).addEventListener('click', checkAnswerMQ1);
+                }
+
+                document.querySelector('#fr1').addEventListener('click',checkAnswerFR1);
+            }
+
+            document.addEventListener('DOMContentLoaded', listen);
+
+        </script>
+
+    </head>
+    <body>
+
+        <div class="jumbotron">
+            <h1>Trivia!</h1>
+        </div>
+
+        <div class="container">
+
+            <div class="section">
+
+                <h2>Part 1: Multiple Choice </h2>
+
+                <hr>
+
+                <h3> What is Italian word for "tomato"? </h3>
+
+                <button type = "button" id = "mq1">Peperoncino</button>
+                <button type = "button" id = "mq1">Cipolla</button>
+                <button type = "button" id = "mq1">Pomodoro</button>
+                <button type = "button" id = "mq1">Aglio</button>
+
+                <h3>
+                    <p id = p1></p>
+                </h3>
+
+            </div>
+
+            <div class="section">
+
+                <h2>Part 2: Free Response</h2>
+
+                <hr>
+
+                <h3> Who wrote Das Kapital? </h3>
+
+                <form>
+                    <input id = "input" type = "text" autocomplete = "off">
+                    <button id = "fr1" type = "button">Check answer</button>
+                </form>
+
+                <h3>
+                    <p id = p2></p>
+                </h3>
+
+            </div>
+
+        </div>
+    </body>
+</html>
