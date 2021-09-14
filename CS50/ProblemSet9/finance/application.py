@@ -114,13 +114,65 @@ def logout():
 @login_required
 def quote():
     """Get stock quote."""
-    return apology("TODO")
+
+    # route via 'post' after clicking the button
+    if request.method == "POST":
+
+        # ensure that field is not empty
+        if not request.form.get("symbol"):
+            return apology("symbol field is empty", 403)
+        else:
+            # request and parse infromation from iex
+            result = lookup(request.form.get("symbol"))
+
+            # if result has failed, return apology
+            if not result:
+                return apology("invalid symbol", 400)
+            # on success render webpage with information
+            else:
+                return render_template("quoted.html", name=result['name'], price=result['price'], symbol=result['symbol'])
+
+    # route via 'get' method by clicking on link or redirect
+    else:
+        return render_template("quote.html")
 
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
-    return apology("TODO")
+
+    # route via 'post' user pressed registration button
+    if request.method == "POST":
+
+        # render apology if username input field is blank
+        if not request.form.get("username"):
+            return apology("username field can't be blank", 403)
+
+        # render apology if either password or confirmation field is blank
+        if not request.form.get("password") or not request.form.get("confirmation"):
+            return apology("password field can't be blank", 403)
+
+        # query database for username
+        username_db_query = db.execute("SELECT username FROM users WHERE username = ?", request.form.get("username"))
+
+        # registrate user
+        if len(username_db_query) == 0:
+            # insert new user into db, storing username and hash of the user's password
+           if request.form.get("password") == request.form.get("confirmation"):
+               db.execute("INSERT INTO users (username, hash) VALUES (?,?)", request.form.get("username"), generate_password_hash(request.form.get("password")))
+            # render apology if password confirmation dosen't match
+           else:
+               return apology("passwords don't match", 403)
+        # render apology if username is aready exists
+        else:
+           return apology("username is already exists", 403)
+
+        # redirect users so they can login themselves
+        return redirect("/")
+
+    # route via 'get', by clicking on link or redirect
+    else:
+        return render_template("register.html")
 
 
 @app.route("/sell", methods=["GET", "POST"])
