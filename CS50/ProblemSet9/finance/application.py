@@ -58,25 +58,45 @@ def buy():
     # user reached route via 'post' (as by submitting a form)
     if request.method == "POST":
 
+        # idk if i am allowed to store such information in variables:
+        user_id = session['user_id']
+        user_cash = db.execute("SELECT cash FROM users WHERE id = ?", user_id)[0]['cash']
+
+        form_symbol = request.form.get("symbol")
+        form_shares = request.form.get("shares")
+
+        symbol_request = lookup(form_symbol)
+
         # ensure symbol form not empty
-        if not request.form.get("symbol"):
+        if not form_symbol:
             return apology("missing symbol", 400)
 
         # ensure shares form not empty
-        if not request.form.get("shares"):
+        if not form_shares:
             return apology("missing shares", 400)
 
         # ensure symbol name exists in the market
-        if not lookup(request.form.get("symbol")):
+        if not symbol_request:
             return apology("incorrect symbol")
+        else: # get current price of the symbol
+            symbol_price = symbol_request['price']
 
         # ensure shares amount is greater or equal 1
-        if request.form.get("shares") < 1:
+        if int(form_shares) < 1:
             return apology("invalid amount", 400)
 
-        # apply seiling to 'shares'
-        # TODO: manage database
+        # ensure user posses required amount of cash before transaction
+        # floor is applied to shares
+        stocks_price = symbol_price * int(form_shares)
+        if stocks_price >= user_cash:
+            return apology("not enough money", 400)
 
+        # store transaction in db
+        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, int(form_shares), symbol_price)
+        # update money in users's cash
+        db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash - stocks_price, user_id)
+
+        # on success redirect to index
         return redirect("/")
 
     # user reached route via 'get' (as by click or redirect)
