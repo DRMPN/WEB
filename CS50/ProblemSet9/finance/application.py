@@ -3,6 +3,7 @@ import os
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
+from math import ceil
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -53,7 +54,34 @@ def index():
 @login_required
 def buy():
     """Buy shares of stock"""
-    return apology("TODO")
+
+    # user reached route via 'post' (as by submitting a form)
+    if request.method == "POST":
+
+        # ensure symbol form not empty
+        if not request.form.get("symbol"):
+            return apology("missing symbol", 400)
+
+        # ensure shares form not empty
+        if not request.form.get("shares"):
+            return apology("missing shares", 400)
+
+        # ensure symbol name exists in the market
+        if not lookup(request.form.get("symbol")):
+            return apology("incorrect symbol")
+
+        # ensure shares amount is greater or equal 1
+        if request.form.get("shares") < 1:
+            return apology("invalid amount", 400)
+
+        # apply seiling to 'shares'
+        # TODO: manage database
+
+        return redirect("/")
+
+    # user reached route via 'get' (as by click or redirect)
+    else:
+        return render_template("buy.html")
 
 
 @app.route("/history")
@@ -118,9 +146,9 @@ def quote():
     # route via 'post' after clicking the button
     if request.method == "POST":
 
-        # ensure that field is not empty
+        # ensure field not empty
         if not request.form.get("symbol"):
-            return apology("symbol field is empty", 403)
+            return apology("symbol field is empty", 400)
         else:
             # request and parse infromation from iex
             result = lookup(request.form.get("symbol"))
@@ -158,14 +186,14 @@ def register():
         # registrate user
         if len(username_db_query) == 0:
             # insert new user into db, storing username and hash of the user's password
-           if request.form.get("password") == request.form.get("confirmation"):
-               db.execute("INSERT INTO users (username, hash) VALUES (?,?)", request.form.get("username"), generate_password_hash(request.form.get("password")))
+            if request.form.get("password") == request.form.get("confirmation"):
+                db.execute("INSERT INTO users (username, hash) VALUES (?,?)", request.form.get("username"), generate_password_hash(request.form.get("password")))
             # render apology if password confirmation dosen't match
-           else:
-               return apology("passwords don't match", 403)
+            else:
+                return apology("passwords don't match", 400)
         # render apology if username is aready exists
         else:
-           return apology("username is already exists", 403)
+            return apology("username is already exists", 400)
 
         # redirect users so they can login themselves
         return redirect("/")
