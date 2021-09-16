@@ -47,7 +47,48 @@ if not os.environ.get("API_KEY"):
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("TODO")
+
+    # list of all stocks that user currently possess
+    current_stocks = []
+
+    # get and store user cash to calculate overall total
+    oa_total = db.execute("SELECT cash FROM users WHERE id = ?", session['user_id'])[0]['cash']
+
+    # format user cash
+    user_cash = usd(oa_total)
+
+    # list of dictionaries is ordered by name
+    user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", session['user_id'])
+
+    # get updated information of user's stocks and calculate total price for each of them
+    if user_stocks:
+        for stock in user_stocks:
+
+            # update current stock's information
+            upd_stock = lookup(stock['symbol'])
+
+            # calculate total for current stock
+            stock_total = stock['shares'] * upd_stock['price']
+
+            # summarize total
+            oa_total += stock_total
+
+            # parse updated information
+            parsed_dict = dict(
+                    symbol = upd_stock['symbol'],
+                    name   = upd_stock['name'],
+                    shares = stock['shares'],
+                    price  = usd(upd_stock['price']),
+                    total  = usd(stock_total)
+                )
+
+            # add updated stock to list of current stocks
+            current_stocks.append(parsed_dict)
+
+    # format overall total
+    oa_total = usd(oa_total)
+
+    return render_template("index.html", stocks = current_stocks, cash = user_cash, total = oa_total)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -58,13 +99,19 @@ def buy():
     # user reached route via 'post' (as by submitting a form)
     if request.method == "POST":
 
-        # idk if i am allowed to store such information in variables:
+        ### idk if i am allowed to store such information in variables:
+
+        # get user id
         user_id = session['user_id']
+
+        # get user cash
         user_cash = db.execute("SELECT cash FROM users WHERE id = ?", user_id)[0]['cash']
 
+        # from submitted form get symbol and shares
         form_symbol = request.form.get("symbol")
         form_shares = request.form.get("shares")
 
+        # get information about symbol
         symbol_request = lookup(form_symbol)
 
         # ensure symbol form not empty
@@ -93,6 +140,7 @@ def buy():
 
         # store transaction in db
         db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, int(form_shares), symbol_price)
+
         # update money in users's cash
         db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash - stocks_price, user_id)
 
