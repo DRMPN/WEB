@@ -3,7 +3,6 @@ import os
 from cs50 import SQL
 from flask import Flask, flash, redirect, render_template, request, session
 from flask_session import Session
-from math import ceil
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -237,7 +236,7 @@ def quote():
 def register():
     """Register user"""
 
-    # route via 'post' user pressed registration button
+    # route via 'post' user clicked on the registration button
     if request.method == "POST":
 
         # render apology if username input field is blank
@@ -275,7 +274,41 @@ def register():
 @login_required
 def sell():
     """Sell shares of stock"""
-    return apology("TODO")
+
+    # route via 'post' user clicked on the sell button
+    if request.method == "POST":
+        return apology("TODO")
+
+        # get user id
+        # user_id = session['user_id']
+
+        # get user's stocks
+        # user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
+
+        # correct symbol selection check
+        # if request.form.get("symbol") not in #{ list of symbols that user have }#:
+        #   return apology("incorrect symbol")
+
+        # get only required symbol from list or database
+        # correct amount of shares to sell check
+        # if request.form.get("shares") > #{ user_stocks[0]["shares"] }#:
+        #   return apology("incorrect amount of shares")
+
+        # get selling price for shares
+        # price = lookup(request.form.get("symbol"))["price"]
+
+        # calculate cash
+        # cash = price * int(request.form.get("shares"))
+
+        # update database
+        # update user's cash
+        # update user's stocks
+
+        # When a sale is complete, redirect the user back to the index page
+        # return redirect("/")
+
+    else:
+        return render_template("sell.html")
 
 
 def errorhandler(e):
