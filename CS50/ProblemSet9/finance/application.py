@@ -120,25 +120,30 @@ def buy():
         # ensure shares form not empty
         if not form_shares:
             return apology("missing shares", 400)
+        else:
+            # type check
+            try:
+                form_shares = int(form_shares)
+            except:
+                return apology("invalid shares", 403)
 
         # ensure symbol name exists in the market
         if not symbol_request:
-            return apology("incorrect symbol")
+            return apology("invalid symbol")
         else: # get current price of the symbol
             symbol_price = symbol_request['price']
 
         # ensure shares amount is greater or equal 1
-        if int(form_shares) < 1:
-            return apology("invalid amount", 400)
+        if form_shares < 1:
+            return apology("invalid amount", 403)
 
         # ensure user posses required amount of cash before transaction
-        # floor is applied to shares
-        stocks_price = symbol_price * int(form_shares)
+        stocks_price = symbol_price * form_shares
         if stocks_price >= user_cash:
             return apology("not enough money", 400)
 
         # store transaction in db
-        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, int(form_shares), symbol_price)
+        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, form_shares, symbol_price)
 
         # update money in users's cash
         db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash - stocks_price, user_id)
@@ -215,14 +220,14 @@ def quote():
 
         # ensure field not empty
         if not request.form.get("symbol"):
-            return apology("symbol field is empty", 400)
+            return apology("missing symbol")
         else:
             # request and parse infromation from iex
             result = lookup(request.form.get("symbol"))
 
             # if result has failed, return apology
             if not result:
-                return apology("invalid symbol", 400)
+                return apology("invalid symbol")
             # on success render webpage with information
             else:
                 return render_template("quoted.html", name=result['name'], price=result['price'], symbol=result['symbol'])
@@ -275,40 +280,64 @@ def register():
 def sell():
     """Sell shares of stock"""
 
+    # get user id
+    user_id = session['user_id']
+    # get user's stocks
+    user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
+
     # route via 'post' user clicked on the sell button
     if request.method == "POST":
-        return apology("TODO")
 
-        # get user id
-        # user_id = session['user_id']
+        form_symbol = request.form.get("symbol")
+        form_shares = request.form.get("shares")
 
-        # get user's stocks
-        # user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
+        # select requested stocks to sell
+        user_sub_stocks = list(filter(lambda s: form_symbol in s.values(), user_stocks))
 
-        # correct symbol selection check
-        # if request.form.get("symbol") not in #{ list of symbols that user have }#:
-        #   return apology("incorrect symbol")
+        # ensure user own shares of selected symbol
+        if not user_sub_stocks:
+            return apology("invalid symbol")
 
-        # get only required symbol from list or database
-        # correct amount of shares to sell check
-        # if request.form.get("shares") > #{ user_stocks[0]["shares"] }#:
-        #   return apology("incorrect amount of shares")
+        # validate input field for shares
+        # ensure shares field is not empty
+        if not form_shares:
+            return apology("missing shares")
+        else:
+            # ensure shares type is correct
+            try:
+                form_shares = int(form_shares)
+            except:
+                return apology("invalid shares", 403)
+
+            # ensure shares amount is greater or equal 1
+            if form_shares < 1:
+                return apology("invalid shares", 403)
+
+            # ensure user have enough shares to sell
+            if form_shares > user_sub_stocks[0]['shares']:
+                return apology("too many shares")
 
         # get selling price for shares
-        # price = lookup(request.form.get("symbol"))["price"]
+        symbol_price = lookup(form_symbol)['price']
 
         # calculate cash
-        # cash = price * int(request.form.get("shares"))
+        earnings = symbol_price * form_shares
 
-        # update database
-        # update user's cash
         # update user's stocks
+        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, - form_shares, symbol_price)
+
+        # get user cash
+        user_cash = db.execute("SELECT cash FROM users WHERE id = ?", user_id)[0]['cash']
+
+        # update user's cash
+        db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash + earnings, user_id)
 
         # When a sale is complete, redirect the user back to the index page
-        # return redirect("/")
+        return redirect("/")
 
     else:
-        return render_template("sell.html")
+        #user_symbols = db.execute("SELECT DISTINCT symbol FROM stocks WHERE user_id = ? ORDER BY symbol", session['user_id'])
+        return render_template("sell.html", stocks = user_stocks)
 
 
 def errorhandler(e):
