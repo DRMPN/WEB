@@ -57,7 +57,8 @@ def index():
     user_cash = usd(oa_total)
 
     # list of dictionaries is ordered by name
-    user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", session['user_id'])
+    user_stocks = db.execute(
+        "SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", session['user_id'])
 
     # filter stocks whith quantity <= 0
     user_stocks = list(filter((lambda s: s['shares'] > 0), user_stocks))
@@ -76,12 +77,12 @@ def index():
 
             # parse updated information
             parsed_dict = dict(
-                    symbol = upd_stock['symbol'],
-                    name   = upd_stock['name'],
-                    shares = stock['shares'],
-                    price  = usd(upd_stock['price']),
-                    total  = usd(stock_total)
-                )
+                symbol=upd_stock['symbol'],
+                name=upd_stock['name'],
+                shares=stock['shares'],
+                price=usd(upd_stock['price']),
+                total=usd(stock_total)
+            )
 
             # add updated stock to list of current stocks
             current_stocks.append(parsed_dict)
@@ -89,7 +90,7 @@ def index():
     # format overall total
     oa_total = usd(oa_total)
 
-    return render_template("index.html", stocks = current_stocks, cash = user_cash, total = oa_total)
+    return render_template("index.html", stocks=current_stocks, cash=user_cash, total=oa_total)
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -100,7 +101,7 @@ def buy():
     # user reached route via 'post' (as by submitting a form)
     if request.method == "POST":
 
-        ### idk if i am allowed to store such information in variables:
+        # idk if i am allowed to store such information in variables:
 
         # get user id
         user_id = session['user_id']
@@ -132,7 +133,7 @@ def buy():
         # ensure symbol name exists in the market
         if not symbol_request:
             return apology("invalid symbol")
-        else: # get current price of the symbol
+        else:  # get current price of the symbol
             symbol_price = symbol_request['price']
 
         # ensure shares amount is greater or equal 1
@@ -145,7 +146,8 @@ def buy():
             return apology("not enough money", 400)
 
         # store transaction in db
-        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, form_shares, symbol_price)
+        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)",
+                   user_id, form_symbol, form_shares, symbol_price)
 
         # update money in users's cash
         db.execute("UPDATE users SET cash = ? WHERE id = ?", user_cash - stocks_price, user_id)
@@ -162,7 +164,18 @@ def buy():
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
+
+    # get user id
+    user_id = session['user_id']
+
+    # get transaction history for a user
+    user_history = db.execute("SELECT symbol, shares, price, transaction_time FROM stocks WHERE user_id = ?", user_id)
+    # change text formatting for price column
+    # ugly way to change values inside dictionary, but it works
+    for stock in user_history:
+        stock['price'] = usd(stock['price'])
+
+    return render_template("history.html", stocks=user_history)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -261,7 +274,8 @@ def register():
         if len(username_db_query) == 0:
             # insert new user into db, storing username and hash of the user's password
             if request.form.get("password") == request.form.get("confirmation"):
-                db.execute("INSERT INTO users (username, hash) VALUES (?,?)", request.form.get("username"), generate_password_hash(request.form.get("password")))
+                db.execute("INSERT INTO users (username, hash) VALUES (?,?)", request.form.get(
+                    "username"), generate_password_hash(request.form.get("password")))
             # render apology if password confirmation dosen't match
             else:
                 return apology("passwords don't match", 400)
@@ -285,7 +299,8 @@ def sell():
     # get user id
     user_id = session['user_id']
     # get user's stocks
-    user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
+    user_stocks = db.execute(
+        "SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
     # filter stocks whith quantity <= 0
     user_stocks = list(filter((lambda s: s['shares'] > 0), user_stocks))
 
@@ -328,7 +343,8 @@ def sell():
         earnings = symbol_price * form_shares
 
         # update user's stocks
-        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)", user_id, form_symbol, - form_shares, symbol_price)
+        db.execute("INSERT INTO stocks (user_id, symbol, shares, price) VALUES (?, ?, ?, ?)",
+                   user_id, form_symbol, - form_shares, symbol_price)
 
         # get user cash
         user_cash = db.execute("SELECT cash FROM users WHERE id = ?", user_id)[0]['cash']
@@ -341,7 +357,7 @@ def sell():
 
     else:
         #user_symbols = db.execute("SELECT DISTINCT symbol FROM stocks WHERE user_id = ? ORDER BY symbol", session['user_id'])
-        return render_template("sell.html", stocks = user_stocks)
+        return render_template("sell.html", stocks=user_stocks)
 
 
 def errorhandler(e):
