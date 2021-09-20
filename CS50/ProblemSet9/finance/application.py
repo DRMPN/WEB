@@ -59,10 +59,12 @@ def index():
     # list of dictionaries is ordered by name
     user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", session['user_id'])
 
+    # filter stocks whith quantity <= 0
+    user_stocks = list(filter((lambda s: s['shares'] > 0), user_stocks))
+
     # get updated information of user's stocks and calculate total price for each of them
     if user_stocks:
         for stock in user_stocks:
-
             # update current stock's information
             upd_stock = lookup(stock['symbol'])
 
@@ -284,6 +286,8 @@ def sell():
     user_id = session['user_id']
     # get user's stocks
     user_stocks = db.execute("SELECT symbol, SUM(shares) AS shares FROM stocks WHERE user_id = ? GROUP BY symbol ORDER BY symbol", user_id)
+    # filter stocks whith quantity <= 0
+    user_stocks = list(filter((lambda s: s['shares'] > 0), user_stocks))
 
     # route via 'post' user clicked on the sell button
     if request.method == "POST":
