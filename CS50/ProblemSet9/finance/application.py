@@ -128,7 +128,7 @@ def buy():
             try:
                 form_shares = int(form_shares)
             except:
-                return apology("invalid shares", 403)
+                return apology("invalid shares", 400)
 
         # ensure symbol name exists in the market
         if not symbol_request:
@@ -138,7 +138,7 @@ def buy():
 
         # ensure shares amount is greater or equal 1
         if form_shares < 1:
-            return apology("invalid amount", 403)
+            return apology("invalid amount", 400)
 
         # ensure user posses required amount of cash before transaction
         stocks_price = symbol_price * form_shares
@@ -190,18 +190,18 @@ def login():
 
         # Ensure username was submitted
         if not request.form.get("username"):
-            return apology("must provide username", 403)
+            return apology("must provide username", 400)
 
         # Ensure password was submitted
         elif not request.form.get("password"):
-            return apology("must provide password", 403)
+            return apology("must provide password", 400)
 
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
-            return apology("invalid username and/or password", 403)
+            return apology("invalid username and/or password", 400)
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
@@ -245,7 +245,7 @@ def quote():
                 return apology("invalid symbol")
             # on success render webpage with information
             else:
-                return render_template("quoted.html", name=result['name'], price=result['price'], symbol=result['symbol'])
+                return render_template("quoted.html", name=result['name'], price=usd(result['price']), symbol=result['symbol'])
 
     # route via 'get' method by clicking on link or redirect
     else:
@@ -261,11 +261,11 @@ def register():
 
         # render apology if username input field is blank
         if not request.form.get("username"):
-            return apology("username field can't be blank", 403)
+            return apology("username field can't be blank", 400)
 
         # render apology if either password or confirmation field is blank
         if not request.form.get("password") or not request.form.get("confirmation"):
-            return apology("password field can't be blank", 403)
+            return apology("password field can't be blank", 400)
 
         # query database for username
         username_db_query = db.execute("SELECT username FROM users WHERE username = ?", request.form.get("username"))
@@ -326,11 +326,11 @@ def sell():
             try:
                 form_shares = int(form_shares)
             except:
-                return apology("invalid shares", 403)
+                return apology("invalid shares", 400)
 
             # ensure shares amount is greater or equal 1
             if form_shares < 1:
-                return apology("invalid shares", 403)
+                return apology("invalid shares", 400)
 
             # ensure user have enough shares to sell
             if form_shares > user_sub_stocks[0]['shares']:
